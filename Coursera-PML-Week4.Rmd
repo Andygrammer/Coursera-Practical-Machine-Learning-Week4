@@ -1,0 +1,180 @@
+---
+title: 'Coursera - PML: Course Project'
+author: "André Marinho"
+date: "14/08/2020"
+output: 
+        html_document:
+                keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 0. Project Introduction
+
+### 0.1. Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <http://groupware.les.inf.puc-rio.br/har> (see the section on the Weight Lifting Exercise Dataset). 
+
+### 0.2. Data
+
+The training data for this project are available here:
+
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv>
+
+The test data are available here:
+
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv>
+
+The data for this project come from this source: <http://groupware.les.inf.puc-rio.br/har>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+### 0.3. Motivation
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+### 0.4. Goal
+
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+## 1. Load Libraries
+
+```{r message=FALSE}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+```
+
+## 2. Load and Clean Data
+
+```{r}
+set.seed(14082020) # reproducibility
+
+data_training <- read.csv(file="dataset/pml-training.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
+
+data_testing<- read.csv(file="dataset/pml-testing.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
+
+# Remove missing values
+
+data_training <- data_training[, colSums(is.na(data_training)) == 0]
+
+data_testing <- data_testing[, colSums(is.na(data_testing)) == 0]
+```
+
+## 3. Resample Datasets
+
+```{r}
+# Training data resampling: remove unnecessary columns (1:7)
+
+data_training <- data_training[, -c(1:7)]
+
+# Testing data resampling: remove unnecessary columns (1:7), and the "problem_id" column (of the Coursera assignment project)
+
+data_testing <- data_testing[, -c(1:7)]
+data_testing <- data_testing[, -c(length(data_testing))]
+```
+
+### 3.1. Create a validation sample
+
+```{r}
+set.seed(14082020) # reproducibility
+
+# 70% training; 30% validation
+
+training <- createDataPartition(data_training$classe, p=0.7, list=FALSE)
+data_training <- data_training[training, ]
+data_validation <- data_training[-training, ]
+
+dim(data_training)
+dim(data_validation)
+```
+
+### 3.2. Analyse Correlated Features
+
+```{r}
+corr <- cor(data_training[, -length(data_training)])
+
+# Highly correlated features, cutoff = 0.8
+
+corr_high <- findCorrelation(corr, cutoff=0.8)
+names(data_training)[corr_high]
+```
+
+## 4. Build Model 1: Decision Tree
+
+```{r}
+set.seed(14082020) # reproducibility
+decision_tree <- rpart(classe ~., data=data_training, method="class")
+
+# Plot the tree
+rpart.plot(decision_tree)
+```
+
+## 5. Model 1 Results
+
+```{r}
+decision_tree_pred <- predict(decision_tree, data_validation, type="class")
+
+confusion_matrix <- confusionMatrix(decision_tree_pred, data_validation$classe)
+confusion_matrix
+
+plot(confusion_matrix$table, col=confusion_matrix$byClass,
+     main=paste("Decision Tree Accuracy = ",
+                round(confusion_matrix$overall['Accuracy'], 4)))
+```
+
+## 5. Build Model 2: Random Forests
+
+```{r cache=TRUE}
+set.seed(14082020) # reproducibility
+random_forests <- randomForest(classe ~., data=data_training)
+
+# Plot the random forests
+plot(random_forests)
+```
+
+## 6. Model 2 Results
+
+```{r cache=TRUE}
+random_forests_pred <- predict(random_forests, data_validation, type="class")
+
+cm_rf <- confusionMatrix(random_forests_pred, data_validation$classe)
+cm_rf
+
+plot(cm_rf$table, col=cm_rf$byClass, 
+     main=paste("Random Forests Accuracy = ",
+                round(cm_rf$overall['Accuracy'], 4)))
+```
+
+## 7. Build Model 3: Generalized Boosted Regression
+
+```{r}
+set.seed(14082020) # reproducibility
+control_boost <- trainControl(method="repeatedcv",
+                              number=5,
+                              repeats=1)
+gbr <- train(classe ~., data=data_training, method="gbm",
+             trControl=control_boost, verbose=FALSE)
+gbm <- gbr$finalModel
+```
+
+## 8. Model 3 Results
+
+```{r cache=TRUE}
+gbm_pred <- predict(gbm, new_data=data_validation)
+
+cm_gbm <- confusionMatrix(gbm_pred, data_validation$classe)
+cm_gbm
+
+plot(gbm_pred, ylim=c(0.9, 1))
+```
+
+## 9. Classify Data
+
+Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values
+
+```{r cache=TRUE}
+data_predict <- predict(random_forests, new_data=data_testing)
+data_predict
+```
