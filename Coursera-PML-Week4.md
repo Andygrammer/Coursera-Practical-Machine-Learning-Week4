@@ -313,13 +313,9 @@ cm_gbm
 ## Balanced Accuracy      0.9923   0.9774   0.9733   0.9749   0.9898
 ```
 
-```r
-#plot(gbm_pred, ylim=c(0.9, 1))
-```
-
 ## 9. Classify Data
 
-Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values
+Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values.
 
 
 ```r

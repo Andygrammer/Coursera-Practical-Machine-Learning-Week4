@@ -107,7 +107,7 @@ plot(confusion_matrix$table, col=confusion_matrix$byClass,
                 round(confusion_matrix$overall['Accuracy'], 4)))
 ```
 
-## 5. Build Model 2: Random Forests
+## 6. Build Model 2: Random Forests
 
 ```{r cache=TRUE}
 set.seed(14082020) # reproducibility
@@ -117,7 +117,7 @@ random_forests <- randomForest(classe ~., data=data_training)
 plot(random_forests)
 ```
 
-## 6. Model 2 Results
+## 7. Model 2 Results
 
 ```{r cache=TRUE}
 random_forests_pred <- predict(random_forests, data_validation, type="class")
@@ -130,7 +130,7 @@ plot(cm_rf$table, col=cm_rf$byClass,
                 round(cm_rf$overall['Accuracy'], 4)))
 ```
 
-## 7. Build Model 3: Generalized Boosted Regression
+## 8. Build Model 3: Generalized Boosted Regression
 
 ```{r}
 set.seed(14082020) # reproducibility
@@ -143,7 +143,7 @@ gbr <- train(classe ~., data=data_training, method="gbm",
 gbr$finalModel
 ```
 
-## 8. Model 3 Results
+## 9. Model 3 Results
 
 ```{r cache=TRUE}
 gbm_pred <- predict(gbr, newdata=data_validation)
@@ -152,7 +152,7 @@ cm_gbm <- confusionMatrix(gbm_pred, data_validation$classe)
 cm_gbm
 ```
 
-## 9. Classify Data
+## 10. Classify Data
 
 Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values.
 
