@@ -182,7 +182,7 @@ plot(confusion_matrix$table, col=confusion_matrix$byClass,
 
 ![](Coursera-PML-Week4_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
-## 5. Build Model 2: Random Forests
+## 6. Build Model 2: Random Forests
 
 
 ```r
@@ -195,7 +195,7 @@ plot(random_forests)
 
 ![](Coursera-PML-Week4_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
-## 6. Model 2 Results
+## 7. Model 2 Results
 
 
 ```r
@@ -248,7 +248,7 @@ plot(cm_rf$table, col=cm_rf$byClass,
 
 ![](Coursera-PML-Week4_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
-## 7. Build Model 3: Generalized Boosted Regression
+## 8. Build Model 3: Generalized Boosted Regression
 
 
 ```r
@@ -268,7 +268,7 @@ gbr$finalModel
 ## There were 52 predictors of which 52 had non-zero influence.
 ```
 
-## 8. Model 3 Results
+## 9. Model 3 Results
 
 
 ```r
@@ -313,7 +313,7 @@ cm_gbm
 ## Balanced Accuracy      0.9923   0.9774   0.9733   0.9749   0.9898
 ```
 
-## 9. Classify Data
+## 10. Classify Data
 
 Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values.
 
