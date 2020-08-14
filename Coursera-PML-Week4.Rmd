@@ -150,8 +150,6 @@ gbm_pred <- predict(gbr, newdata=data_validation)
 
 cm_gbm <- confusionMatrix(gbm_pred, data_validation$classe)
 cm_gbm
-
-#plot(gbm_pred, ylim=c(0.9, 1))
 ```
 
 ## 9. Classify Data
