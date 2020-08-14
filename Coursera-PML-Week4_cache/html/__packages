@@ -5,3 +5,7 @@ caret
 rpart
 rpart.plot
 randomForest
+tibble
+bitops
+rattle
+gbm

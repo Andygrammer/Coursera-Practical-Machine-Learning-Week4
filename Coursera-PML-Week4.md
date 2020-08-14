@@ -9,28 +9,7 @@ output:
 
 
 
-## 0. Project Introduction
-
-### 0.1. Background
-
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <http://groupware.les.inf.puc-rio.br/har> (see the section on the Weight Lifting Exercise Dataset). 
-
-### 0.2. Data
-
-The training data for this project are available here:
-
-<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv>
-
-The test data are available here:
-
-<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv>
-
-The data for this project come from this source: <http://groupware.les.inf.puc-rio.br/har>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
-
-### 0.3. Motivation
-One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
-
-### 0.4. Goal
+## 0. Project Goal
 
 The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
 
@@ -38,10 +17,14 @@ The goal of your project is to predict the manner in which they did the exercise
 
 
 ```r
-library(caret)
-library(rpart)
-library(rpart.plot)
 library(randomForest)
+library(rattle)
+library(rpart.plot)
+library(rpart)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(gbm)
 ```
 
 ## 2. Load and Clean Data
@@ -52,7 +35,7 @@ set.seed(14082020) # reproducibility
 
 data_training <- read.csv(file="dataset/pml-training.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
 
-data_testing<- read.csv(file="dataset/pml-testing.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
+data_testing <- read.csv(file="dataset/pml-testing.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
 
 # Remove missing values
 
@@ -100,6 +83,14 @@ dim(data_validation)
 
 ```
 ## [1] 4111   53
+```
+
+```r
+dim(data_testing)
+```
+
+```
+## [1] 20 52
 ```
 
 ### 3.2. Analyse Correlated Features
@@ -250,7 +241,94 @@ cm_rf
 ```
 
 ```r
-plot(random_forests_pred)
+plot(cm_rf$table, col=cm_rf$byClass, 
+     main=paste("Random Forests Accuracy = ",
+                round(cm_rf$overall['Accuracy'], 4)))
 ```
 
 ![](Coursera-PML-Week4_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+## 7. Build Model 3: Generalized Boosted Regression
+
+
+```r
+set.seed(14082020) # reproducibility
+library(caret)
+control_boost <- trainControl(method="repeatedcv",
+                              number=5,
+                              repeats=1)
+gbr <- train(classe ~., data=data_training, method="gbm",
+             trControl=control_boost, verbose=FALSE)
+gbr$finalModel
+```
+
+```
+## A gradient boosted model with multinomial loss function.
+## 150 iterations were performed.
+## There were 52 predictors of which 52 had non-zero influence.
+```
+
+## 8. Model 3 Results
+
+
+```r
+gbm_pred <- predict(gbr, newdata=data_validation)
+
+cm_gbm <- confusionMatrix(gbm_pred, data_validation$classe)
+cm_gbm
+```
+
+```
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1153   14    0    1    0
+##          B    7  765   16    2    4
+##          C    4   15  694   22    4
+##          D    0    0   12  637    6
+##          E    1    0    1    5  748
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9723          
+##                  95% CI : (0.9668, 0.9771)
+##     No Information Rate : 0.2834          
+##     P-Value [Acc > NIR] : < 2e-16         
+##                                           
+##                   Kappa : 0.9649          
+##                                           
+##  Mcnemar's Test P-Value : 0.03782         
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9897   0.9635   0.9599   0.9550   0.9816
+## Specificity            0.9949   0.9913   0.9867   0.9948   0.9979
+## Pos Pred Value         0.9872   0.9635   0.9391   0.9725   0.9907
+## Neg Pred Value         0.9959   0.9913   0.9914   0.9913   0.9958
+## Prevalence             0.2834   0.1931   0.1759   0.1622   0.1854
+## Detection Rate         0.2805   0.1861   0.1688   0.1550   0.1820
+## Detection Prevalence   0.2841   0.1931   0.1798   0.1593   0.1837
+## Balanced Accuracy      0.9923   0.9774   0.9733   0.9749   0.9898
+```
+
+```r
+#plot(gbm_pred, ylim=c(0.9, 1))
+```
+
+## 9. Classify Data
+
+Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values
+
+
+```r
+data_predict <- predict(random_forests, newdata=data_testing)
+data_predict
+```
+
+```
+##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E
+```

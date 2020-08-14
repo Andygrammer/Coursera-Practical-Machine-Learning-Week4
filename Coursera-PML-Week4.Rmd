@@ -11,39 +11,21 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 0. Project Introduction
-
-### 0.1. Background
-
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <http://groupware.les.inf.puc-rio.br/har> (see the section on the Weight Lifting Exercise Dataset). 
-
-### 0.2. Data
-
-The training data for this project are available here:
-
-<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv>
-
-The test data are available here:
-
-<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv>
-
-The data for this project come from this source: <http://groupware.les.inf.puc-rio.br/har>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
-
-### 0.3. Motivation
-One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
-
-### 0.4. Goal
+## 0. Project Goal
 
 The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
 
 ## 1. Load Libraries
 
 ```{r message=FALSE}
-library(caret)
-library(rpart)
-library(rpart.plot)
 library(randomForest)
 library(rattle)
+library(rpart.plot)
+library(rpart)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(gbm)
 ```
 
 ## 2. Load and Clean Data
@@ -53,7 +35,7 @@ set.seed(14082020) # reproducibility
 
 data_training <- read.csv(file="dataset/pml-training.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
 
-data_testing<- read.csv(file="dataset/pml-testing.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
+data_testing <- read.csv(file="dataset/pml-testing.csv", na.strings=c("NA", "#DIV/0!", ""), header=TRUE)
 
 # Remove missing values
 
@@ -88,6 +70,7 @@ data_validation <- data_training[-training, ]
 
 dim(data_training)
 dim(data_validation)
+dim(data_testing)
 ```
 
 ### 3.2. Analyse Correlated Features
@@ -151,30 +134,31 @@ plot(cm_rf$table, col=cm_rf$byClass,
 
 ```{r}
 set.seed(14082020) # reproducibility
+library(caret)
 control_boost <- trainControl(method="repeatedcv",
                               number=5,
                               repeats=1)
 gbr <- train(classe ~., data=data_training, method="gbm",
              trControl=control_boost, verbose=FALSE)
-gbm <- gbr$finalModel
+gbr$finalModel
 ```
 
 ## 8. Model 3 Results
 
 ```{r cache=TRUE}
-gbm_pred <- predict(gbm, new_data=data_validation)
+gbm_pred <- predict(gbr, newdata=data_validation)
 
 cm_gbm <- confusionMatrix(gbm_pred, data_validation$classe)
 cm_gbm
 
-plot(gbm_pred, ylim=c(0.9, 1))
+#plot(gbm_pred, ylim=c(0.9, 1))
 ```
 
 ## 9. Classify Data
 
-Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values
+Best model based on accuracy -> Random Forests. Then, use random_forests to predict the test data values.
 
 ```{r cache=TRUE}
-data_predict <- predict(random_forests, new_data=data_testing)
+data_predict <- predict(random_forests, newdata=data_testing)
 data_predict
 ```
